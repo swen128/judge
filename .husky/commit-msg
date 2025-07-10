@@ -1,0 +1,5 @@
+#!/bin/sh
+
+if [ "$CLAUDECODE" = "1" ]; then
+  bunx --no-install commitlint --edit "$1"
+fi
