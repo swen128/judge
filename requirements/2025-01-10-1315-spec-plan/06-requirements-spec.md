@@ -39,9 +39,10 @@ Judge will be a CLI tool that:
 
 ### 4. Reporting
 - **Terminal Output**: Human-readable output with colors and formatting
+- **JSON Output**: Machine-readable format for programmatic consumption
+- **Reporter Interface**: Extensible design for custom output formats
 - **Exit Codes**: Appropriate exit codes for CI/CD integration
 - **Issue Grouping**: Group issues by rule and severity
-- **Progress Indication**: Show progress during analysis
 
 ### 5. CLI Interface
 - **Commands**:
@@ -52,6 +53,7 @@ Judge will be a CLI tool that:
   - `judge --help` - Show usage information
   - `judge --version` - Show version
   - `judge --show-config` - Display resolved configuration
+  - `judge --reporter <type>` - Select output reporter (stdout, json)
 
 ## Technical Requirements
 
@@ -64,7 +66,7 @@ src/
 │   └── init.ts          # Interactive config setup
 ├── config/
 │   ├── types.ts         # Configuration interfaces
-│   ├── loader.ts        # TOML loading with Bun
+│   ├── loader.ts        # TOML loading
 │   └── validator.ts     # Config validation with Zod
 ├── providers/
 │   ├── types.ts         # Provider interface
@@ -77,8 +79,11 @@ src/
 │   └── cache.ts         # Remote file caching
 ├── checker/
 │   ├── semantic.ts      # Core checking logic
-│   ├── prompts.ts       # Prompt template engine
-│   └── reporter.ts      # Result formatting
+│   └── prompts.ts       # Prompt template engine
+├── reporters/
+│   ├── types.ts         # Reporter interface
+│   ├── stdout.ts        # Terminal reporter
+│   └── json.ts          # JSON reporter
 └── utils/
     ├── exec.ts          # Process execution
     └── fs.ts            # File system helpers
@@ -89,9 +94,10 @@ src/
 interface JudgeConfig {
   version: "1.0";
   provider: "claude" | "gemini";
-  timeout?: number;        // Default: 30 seconds
-  cache_dir?: string;      // Default: .judge-cache
-  fail_on_issues?: boolean; // Default: true
+  timeout?: number;              // Default: 120 seconds
+  cache_dir?: string;            // Default: .judge-cache
+  fail_on_issues?: boolean;      // Default: true
+  max_concurrent_checks?: number; // Default: 5
   rules: Rule[];
 }
 
@@ -145,14 +151,49 @@ interface Issue {
 }
 ```
 
-### 4. Implementation Details
-- **Process Management**: Use `Bun.spawn()` for CLI execution
-- **TOML Parsing**: Use Bun's native TOML import
+### 4. Reporter Interface
+```typescript
+interface Reporter {
+  report(results: CheckResults): string;
+}
+
+interface CheckResults {
+  config: JudgeConfig;
+  rules: RuleResult[];
+  summary: CheckSummary;
+}
+
+interface RuleResult {
+  rule: Rule;
+  issues: Issue[];
+  duration: number;
+  filesChecked: number;
+}
+
+interface CheckSummary {
+  totalRules: number;
+  totalIssues: number;
+  issuesBySeverity: Record<Severity, number>;
+  duration: number;
+  passed: boolean;
+}
+```
+
+### 5. Implementation Details
+- **Process Management**: Use Node.js `child_process` or cross-platform spawn library
+- **Parallel Execution**: Run rules concurrently with configurable limit
+- **Error Handling**: Fail fast on missing tools, continue on check failures
+- **Tool Integration**: 
+  - Claude: Use SDK for programmatic prompt passing
+  - Gemini: Pass prompts via stdin to avoid CLI limits
+- **TOML Parsing**: Use @iarna/toml or similar Node-compatible library
 - **Validation**: Use Zod for runtime config validation
-- **File Operations**: Use Bun's file APIs
+- **File Operations**: Use Node.js fs/promises API
 - **Pattern Matching**: Use micromatch for glob patterns
-- **Caching**: Use Bun's built-in SQLite for caching remote files
+- **Caching**: HTTP-compliant caching with ETag/Last-Modified support
+- **Binary Files**: No filtering - let AI tools handle all file types
 - **Prompt Templates**: Use template literals with replacements
+- **Output Format**: Flexible based on AI tool capabilities
 
 ## Acceptance Criteria
 
