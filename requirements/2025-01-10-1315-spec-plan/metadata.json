@@ -1,0 +1,26 @@
+{
+  "id": "spec-plan",
+  "started": "2025-01-10T13:15:00Z",
+  "lastUpdated": "2025-01-10T13:30:00Z",
+  "status": "active",
+  "phase": "complete",
+  "progress": {
+    "discovery": { "answered": 5, "total": 5 },
+    "detail": { "answered": 5, "total": 5 }
+  },
+  "contextFiles": [
+    "reference/semcheck/main.go",
+    "reference/semcheck/cmd/cli/cli.go",
+    "reference/semcheck/internal/config/config.go",
+    "reference/semcheck/internal/providers/client.go",
+    "reference/semcheck/internal/processor/matcher.go",
+    "reference/semcheck/internal/checker/semantic.go"
+  ],
+  "relatedFeatures": [
+    "file-matching",
+    "provider-abstraction",
+    "rule-based-checking",
+    "prompt-templates",
+    "structured-output"
+  ]
+}
