@@ -1,0 +1,70 @@
+# Judge configuration for the Judge project itself
+
+version: "1.0"
+provider: claude
+timeout: 120
+cache_dir: .judge-cache
+fail_on_issues: true
+max_concurrent_checks: 5
+
+rule_bindings:
+  # Type safety rules for all TypeScript files
+  - name: type-safety
+    fail_on: error
+    confidence_threshold: 0.8
+    files:
+      include:
+        - "src/**/*.ts"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.spec.ts"
+    rules:
+      - path: specs/type-safety.md
+
+  # Error handling patterns
+  - name: error-handling
+    fail_on: error
+    confidence_threshold: 0.8
+    files:
+      include:
+        - "src/**/*.ts"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.spec.ts"
+    rules:
+      - path: specs/error-handling.md
+
+  # Provider interface compliance
+  - name: provider-compliance
+    fail_on: error
+    confidence_threshold: 0.9
+    files:
+      include:
+        - "src/providers/*.ts"
+      exclude:
+        - "src/providers/factory.ts"
+    rules:
+      - path: specs/provider-interface.md
+
+  # CLI standards
+  - name: cli-standards
+    fail_on: warning
+    confidence_threshold: 0.8
+    files:
+      include:
+        - "src/cli/*.ts"
+    rules:
+      - path: specs/cli-standards.md
+
+  # Main specification compliance
+  - name: spec-compliance
+    fail_on: error
+    confidence_threshold: 0.8
+    files:
+      include:
+        - "src/**/*.ts"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.spec.ts"
+    rules:
+      - path: docs/spec.md

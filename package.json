@@ -1,5 +1,6 @@
 {
   "name": "judge",
+  "version": "1.0.0",
   "module": "src/index.ts",
   "type": "module",
   "bin": {
