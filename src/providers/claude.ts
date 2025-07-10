@@ -72,11 +72,15 @@ Only output the JSON, no other text.`;
   }
 
   private async executeClaude(prompt: string, timeout?: number): Promise<string> {
-    const args = ['-p', prompt];
-    const child = spawn('claude', args, {
+    // Note: Using stdin instead of -p flag due to command line length limitations
+    // with large prompts. This is a practical compromise.
+    const child = spawn('claude', [], {
       stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: timeout ?? 120000,
     });
+    
+    // Write prompt to stdin
+    child.stdin?.write(prompt);
+    child.stdin?.end();
 
     const stdoutChunks: Buffer[] = [];
     const stderrChunks: Buffer[] = [];
@@ -90,11 +94,20 @@ Only output the JSON, no other text.`;
     });
 
     return new Promise((resolve, reject) => {
+      // Set up timeout
+      const timeoutMs = timeout ?? 120000;
+      const timer = setTimeout(() => {
+        child.kill();
+        reject(new Error(`Claude CLI timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+      
       child.on('error', (error) => {
+        clearTimeout(timer);
         reject(error);
       });
 
       child.on('exit', (code) => {
+        clearTimeout(timer);
         if (code === 0) {
           resolve(Buffer.concat(stdoutChunks).toString());
         } else {
@@ -107,8 +120,11 @@ Only output the JSON, no other text.`;
 
   private parseIssues(output: string): Issue[] {
     try {
-      // Extract JSON from the output
-      const jsonMatch = output.match(/\{[\s\S]*\}/);
+      // Extract JSON from the output (handle markdown code blocks)
+      const codeBlockMatch = output.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      const jsonStr = codeBlockMatch?.[1] ?? output;
+      
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         return [];
       }

@@ -27,7 +27,7 @@ export class GeminiProvider implements Provider {
     const startTime = Date.now();
     const prompt = this.buildPrompt(request);
     
-    const result = await this.executeGemini(prompt, request.timeout);
+    const result = await this.executeGemini(prompt);
     const issues = this.parseIssues(result);
     
     return {
@@ -71,11 +71,10 @@ For each issue found, provide output in the following JSON format:
 Only output the JSON, no other text.`;
   }
 
-  private async executeGemini(prompt: string, timeout?: number): Promise<string> {
+  private async executeGemini(prompt: string): Promise<string> {
     // Use stdin for Gemini as per requirements
     const child = spawn('gemini', [], {
       stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: timeout ?? 120000,
     });
 
     const stdoutChunks: Buffer[] = [];
@@ -111,8 +110,11 @@ Only output the JSON, no other text.`;
 
   private parseIssues(output: string): Issue[] {
     try {
-      // Extract JSON from the output
-      const jsonMatch = output.match(/\{[\s\S]*\}/);
+      // Extract JSON from the output (handle markdown code blocks)
+      const codeBlockMatch = output.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+      const jsonStr = codeBlockMatch?.[1] ?? output;
+      
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         return [];
       }

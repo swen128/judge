@@ -13,7 +13,8 @@
     "test": "bun test",
     "check": "bun run build && bun run typecheck && bun run test && bun run lint && bun knip",
     "knip": "knip",
-    "prepare": "husky"
+    "prepare": "husky",
+    "judge": "bun run src/cli/index.ts src/**/*.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
