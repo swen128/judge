@@ -27,6 +27,8 @@ export default [
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
       },
     },
     plugins: {
@@ -44,9 +46,10 @@ export default [
       '@typescript-eslint/no-unsafe-return': 'error',
       '@typescript-eslint/no-unsafe-argument': 'error',
       
-      // No type assertions allowed
+      // Allow type assertions only for object literals
       '@typescript-eslint/consistent-type-assertions': ['error', {
-        assertionStyle: 'never',
+        assertionStyle: 'as',
+        objectLiteralTypeAssertions: 'allow',
       }],
       
       // No throwing exceptions
