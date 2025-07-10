@@ -46,10 +46,9 @@ export default [
       '@typescript-eslint/no-unsafe-return': 'error',
       '@typescript-eslint/no-unsafe-argument': 'error',
       
-      // Allow type assertions only for object literals
+      // No type assertions allowed
       '@typescript-eslint/consistent-type-assertions': ['error', {
-        assertionStyle: 'as',
-        objectLiteralTypeAssertions: 'allow',
+        assertionStyle: 'never',
       }],
       
       // No throwing exceptions

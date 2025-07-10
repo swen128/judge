@@ -1,40 +1,57 @@
 import { readFile } from 'fs/promises';
 import { load } from 'js-yaml';
-import { Result, ok, err } from 'neverthrow';
+import { ok, err, ResultAsync, Result } from 'neverthrow';
 import { dirname, resolve } from 'path';
 import type { JudgeConfig, JudgeError, ResolvedConfig, ResolvedRuleBinding } from '../types/index.js';
 import { JudgeConfigSchema } from './schema.js';
 
-export async function loadConfig(configPath: string): Promise<Result<JudgeConfig, JudgeError>> {
-  try {
-    const content = await readFile(configPath, 'utf-8');
-    const parsed = load(content);
-    
-    const result = JudgeConfigSchema.safeParse(parsed);
-    if (!result.success) {
-      return err({
-        type: 'CONFIG_INVALID',
+export function loadConfig(configPath: string): ResultAsync<JudgeConfig, JudgeError> {
+  return ResultAsync.fromPromise(
+    readFile(configPath, 'utf-8'),
+    (error): JudgeError => {
+      // Handle file not found errors
+      // We check the error string since we can't use 'in' operator or type assertions
+      const errorString = String(error);
+      if (errorString.includes('ENOENT')) {
+        return {
+          type: 'CONFIG_NOT_FOUND' as const,
+          path: configPath,
+        };
+      }
+      
+      // Get error message
+      const message = error instanceof Error ? error.message : 'Failed to read config file';
+      return {
+        type: 'CONFIG_INVALID' as const,
         path: configPath,
-        reason: result.error.errors[0]?.message ?? 'Invalid configuration',
-      });
+        reason: message,
+      };
     }
-    
-    return ok(result.data);
-  } catch (error) {
-    const nodeError = error as { code?: string };
-    if (nodeError.code === 'ENOENT') {
-      return err({
-        type: 'CONFIG_NOT_FOUND',
+  ).andThen(content => {
+    // Parse YAML using Result.fromThrowable
+    const parseYaml = Result.fromThrowable(
+      load,
+      (error): JudgeError => ({
+        type: 'CONFIG_INVALID' as const,
         path: configPath,
-      });
-    }
+        reason: error instanceof Error ? error.message : 'Invalid YAML syntax',
+      })
+    );
     
-    return err({
-      type: 'CONFIG_INVALID',
-      path: configPath,
-      reason: (error as Error).message,
+    return parseYaml(content).andThen(parsed => {
+      // Validate with Zod schema
+      const result = JudgeConfigSchema.safeParse(parsed);
+      if (!result.success) {
+        return err({
+          type: 'CONFIG_INVALID' as const,
+          path: configPath,
+          reason: result.error.errors[0]?.message ?? 'Invalid configuration',
+        });
+      }
+      
+      return ok(result.data);
     });
-  }
+  });
 }
 
 export function resolveConfig(config: JudgeConfig, configPath: string): ResolvedConfig {

@@ -1,4 +1,5 @@
 import { spawn } from 'cross-spawn';
+import { z } from 'zod';
 import type { Provider, CheckRequest, CheckResponse, Issue, Severity } from '../types/index.js';
 
 
@@ -136,42 +137,33 @@ Only output the JSON, no other text.`;
         return [];
       }
       
-      const obj = parsed as { issues?: unknown };
-      const issuesProperty = obj.issues;
-      if (!Array.isArray(issuesProperty)) {
+      // Create a schema for the expected response
+      const ResponseSchema = z.object({
+        issues: z.array(z.object({
+          severity: z.enum(['error', 'warning', 'notice']).optional(),
+          message: z.string(),
+          file: z.string(),
+          line: z.number(),
+          confidence: z.number().default(0.5),
+        })),
+      });
+      
+      const parseResult = ResponseSchema.safeParse(parsed);
+      if (!parseResult.success) {
         return [];
       }
 
       const issues: Issue[] = [];
-      for (const item of issuesProperty) {
-        if (typeof item !== 'object' || item === null) {
-          continue;
-        }
+      for (const item of parseResult.data.issues) {
+        const severity = this.parseSeverity(item.severity);
         
-        const issue = item as Record<string, unknown>;
-        const severityValue = issue.severity;
-        const messageValue = issue.message;
-        const fileValue = issue.file;
-        const lineValue = issue.line;
-        const confidenceValue = issue.confidence;
-        
-        const severity = this.parseSeverity(
-          typeof severityValue === 'string' ? severityValue : undefined
-        );
-        const message = typeof messageValue === 'string' ? messageValue : 'Unknown issue';
-        const file = typeof fileValue === 'string' ? fileValue : undefined;
-        const line = typeof lineValue === 'number' ? lineValue : undefined;
-        const confidence = typeof confidenceValue === 'number' ? confidenceValue : 0.5;
-        
-        if (file !== undefined && line !== undefined) {
-          issues.push({
-            severity,
-            message,
-            file,
-            line,
-            confidence,
-          });
-        }
+        issues.push({
+          severity,
+          message: item.message,
+          file: item.file,
+          line: item.line,
+          confidence: item.confidence,
+        });
       }
       
       return issues;

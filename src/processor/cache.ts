@@ -1,7 +1,15 @@
 import { createHash } from 'crypto';
 import { mkdir, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
+import { z } from 'zod';
 import type { RemoteCache, CachedContent } from '../types/index.js';
+
+const CachedContentSchema = z.object({
+  content: z.string(),
+  timestamp: z.string().transform(str => new Date(str)),
+  headers: z.record(z.string()),
+  hash: z.string(),
+});
 
 export class RemoteCacheImpl implements RemoteCache {
   constructor(private cacheDir: string) {}
@@ -12,9 +20,14 @@ export class RemoteCacheImpl implements RemoteCache {
     
     try {
       const content = await readFile(cachePath, 'utf-8');
-      const cached = JSON.parse(content) as CachedContent;
-      cached.timestamp = new Date(cached.timestamp);
-      return cached;
+      const parsed: unknown = JSON.parse(content);
+      const result = CachedContentSchema.safeParse(parsed);
+      
+      if (!result.success) {
+        return null;
+      }
+      
+      return result.data;
     } catch {
       return null;
     }

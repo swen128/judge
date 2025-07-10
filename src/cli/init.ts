@@ -39,7 +39,8 @@ export async function initConfig(path?: string): Promise<void> {
     console.log('2. Add your specification files');
     console.log('3. Run "judge" to check your code');
   } catch (error) {
-    console.error(`❌ Failed to create config file: ${(error as Error).message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`❌ Failed to create config file: ${message}`);
     process.exit(1);
   }
 }

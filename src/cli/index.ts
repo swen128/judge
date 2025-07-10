@@ -12,9 +12,11 @@ import { createReporter } from '../reporters/factory.js';
 import { initConfig } from './init.js';
 import type { JudgeError } from '../types/index.js';
 
-interface PackageJson {
-  version: string;
-}
+import { z } from 'zod';
+
+const PackageJsonSchema = z.object({
+  version: z.string(),
+});
 
 interface CliOptions {
   config: string;
@@ -26,7 +28,12 @@ interface CliOptions {
 
 const program = new Command();
 const pkgContent = await readFile(new URL('../../package.json', import.meta.url), 'utf-8');
-const pkg = JSON.parse(pkgContent) as PackageJson;
+const pkgParsed: unknown = JSON.parse(pkgContent);
+const parseResult = PackageJsonSchema.safeParse(pkgParsed);
+if (!parseResult.success) {
+  process.exit(1);
+}
+const pkg = parseResult.data;
 
 program
   .name('judge')
@@ -69,10 +76,12 @@ program
         timeout: config.timeout,
       });
 
+      // Validate provider - this throws so we need try-catch
       try {
         await provider.validate();
       } catch (error) {
-        console.error(`❌ ${(error as Error).message}`);
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(`❌ ${message}`);
         process.exit(1);
       }
 
@@ -147,7 +156,8 @@ program
         process.exit(1);
       }
     } catch (error) {
-      console.error(`❌ Unexpected error: ${(error as Error).message}`);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`❌ Unexpected error: ${message}`);
       process.exit(1);
     }
   });
