@@ -195,7 +195,21 @@ This simplified design:
 
 ## 26. Node.js Compatibility
 **Decision:** Use Node.js-compatible APIs instead of Bun-specific ones
-- Use @iarna/toml for TOML parsing instead of Bun's native import
+- Use js-yaml for YAML parsing
 - Use Node.js fs/promises instead of Bun file APIs
 - Use child_process or cross-spawn instead of Bun.spawn()
 - Ensures tool works in both Node.js and Bun environments
+
+## 27. Configuration Format
+**Decision:** Use YAML instead of TOML
+- More familiar to developers
+- Better support for complex nested structures
+- Excellent Node.js library support (js-yaml)
+- Widely used in CI/CD and developer tools
+
+## 28. Error Handling Library
+**Decision:** Use neverthrow for Result types
+- Type-safe error handling
+- Functional programming patterns
+- Better than custom Result implementation
+- Well-maintained and widely used

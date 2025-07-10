@@ -1,0 +1,65 @@
+# Judge configuration example
+
+version: "1.0"
+provider: claude
+timeout: 120
+cache_dir: .judge-cache
+fail_on_issues: true
+max_concurrent_checks: 5
+
+rule_bindings:
+  # Example rule for API specifications
+  - name: api-spec-compliance
+    fail_on: error
+    confidence_threshold: 0.8
+    files:
+      include:
+        - "src/api/**/*.ts"
+        - "src/handlers/**/*.ts"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.spec.ts"
+    rules:
+      - path: docs/api/openapi.yaml
+      - path: docs/api/patterns.md
+
+  # Example rule for general coding principles
+  - name: coding-principles
+    files:
+      include:
+        - "src/**/*.ts"
+      exclude:
+        - "**/*.test.ts"
+        - "**/*.d.ts"
+        - "node_modules/**"
+    rules:
+      - path: docs/coding-principles.md
+      - path: docs/architecture/patterns.md
+
+  # Example rule for remote specification
+  - name: react-best-practices
+    fail_on: warning
+    files:
+      include:
+        - "src/components/**/*.tsx"
+        - "src/pages/**/*.tsx"
+      exclude:
+        - "**/*.stories.tsx"
+        - "**/*.test.tsx"
+    rules:
+      - path: https://react.dev/learn/thinking-in-react
+        cache: true
+      - path: docs/react-guidelines.md
+
+  # Example rule for database code
+  - name: database-patterns
+    confidence_threshold: 0.9
+    files:
+      include:
+        - "src/db/**/*.ts"
+        - "src/models/**/*.ts"
+      exclude:
+        - "**/migrations/**"
+    rules:
+      - path: docs/database-patterns.md
+      - path: docs/sql-style-guide.md

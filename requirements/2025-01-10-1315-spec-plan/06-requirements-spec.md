@@ -16,7 +16,7 @@ Judge will be a CLI tool that:
 ## Functional Requirements
 
 ### 1. Configuration Management
-- **TOML Configuration**: Use TOML format for configuration files (default: `judge.toml`)
+- **YAML Configuration**: Use YAML format for configuration files (default: `judge.yaml`)
 - **Rule Definition**: Support rules that map specification files to implementation files
 - **Provider Selection**: Allow explicit selection of AI provider (claude or gemini)
 - **Remote Specs**: Support loading specification files from HTTP/HTTPS URLs
@@ -66,7 +66,7 @@ src/
 │   └── init.ts          # Interactive config setup
 ├── config/
 │   ├── types.ts         # Configuration interfaces
-│   ├── loader.ts        # TOML loading
+│   ├── loader.ts        # YAML loading
 │   └── validator.ts     # Config validation with Zod
 ├── providers/
 │   ├── types.ts         # Provider interface
@@ -186,7 +186,7 @@ interface CheckSummary {
 - **Tool Integration**: 
   - Claude: Use SDK for programmatic prompt passing
   - Gemini: Pass prompts via stdin to avoid CLI limits
-- **TOML Parsing**: Use @iarna/toml or similar Node-compatible library
+- **YAML Parsing**: Use js-yaml or similar Node-compatible library
 - **Validation**: Use Zod for runtime config validation
 - **File Operations**: Use Node.js fs/promises API
 - **Pattern Matching**: Use micromatch for glob patterns
@@ -198,7 +198,7 @@ interface CheckSummary {
 ## Acceptance Criteria
 
 1. **Configuration**
-   - Tool can load and validate TOML configuration
+   - Tool can load and validate YAML configuration
    - Interactive init creates valid config file
    - Environment variables are properly expanded
 

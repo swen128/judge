@@ -1,1 +1,2 @@
-console.log("Hello via Bun!");
+// Export all types
+export * from './types/index.js';
