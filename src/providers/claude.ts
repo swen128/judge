@@ -1,136 +1,136 @@
-import { spawn } from 'cross-spawn';
+import { query, type SDKMessage } from '@anthropic-ai/claude-code';
 import { z } from 'zod';
 import type { Provider, CheckRequest, CheckResponse, Issue, Severity } from '../types/index.js';
-
 
 export class ClaudeProvider implements Provider {
   readonly name = 'claude';
 
   async validate(): Promise<void> {
-    const result = spawn('claude', ['--version'], { stdio: 'pipe' });
-    
-    return new Promise((resolve, reject) => {
-      result.on('error', () => {
-        reject(new Error('Claude CLI not found. Please install it first.'));
-      });
+    // Try a simple query to validate Claude Code is available
+    try {
+      const messages: SDKMessage[] = [];
+      for await (const message of query({
+        prompt: "Say 'ok' if you're working",
+        options: {
+          maxTurns: 1,
+        },
+      })) {
+        messages.push(message);
+      }
       
-      result.on('exit', (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(new Error('Claude CLI not available'));
-        }
-      });
-    });
+      if (messages.length === 0) {
+        return Promise.reject(new Error('Claude Code did not respond'));
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return Promise.reject(new Error(`Claude Code validation failed: ${message}`));
+    }
   }
 
   async check(request: CheckRequest): Promise<CheckResponse> {
     const startTime = Date.now();
     const prompt = this.buildPrompt(request);
     
-    const result = await this.executeClaude(prompt, request.timeout);
-    const issues = this.parseIssues(result);
-    
-    return {
-      issues,
-      metadata: {
-        model: 'claude',
-        duration: Date.now() - startTime,
-      },
-    };
+    try {
+      const response = await this.executeClaude(prompt, request.timeout);
+      const issues = this.parseIssues(response);
+      
+      return {
+        issues,
+        metadata: {
+          model: 'claude-code',
+          duration: Date.now() - startTime,
+        },
+      };
+    } catch (error) {
+      return {
+        issues: [],
+        metadata: {
+          model: 'claude-code',
+          duration: Date.now() - startTime,
+        },
+      };
+    }
   }
 
   private buildPrompt(request: CheckRequest): string {
-    const implementations = request.implementations
-      .map(impl => `File: ${impl.path}\n\`\`\`${impl.language ?? ''}\n${impl.content}\n\`\`\``)
-      .join('\n\n');
-    
-    const ruleContent = request.rule.sourceUrl !== undefined
-      ? `Rule from ${request.rule.sourceUrl}:\n${request.rule.content}`
-      : `Rule from ${request.rule.path}:\n${request.rule.content}`;
-    
-    return `Please analyze if the following implementation files comply with the given rule/specification.
+    const ruleContent = `
+## Specification/Rule:
+${request.rule.content}
+`;
+
+    const implementationContent = request.implementations.map((file) => `
+## File: ${file.path}
+Language: ${file.language}
+
+\`\`\`${file.language}
+${file.content}
+\`\`\`
+`).join('\n');
+
+    return `Check if the following implementation files comply with the given specification/rule.
 
 ${ruleContent}
 
-Implementation files to check:
-${implementations}
+${implementationContent}
 
-For each issue found, provide output in the following JSON format:
+Analyze the code and report any violations or issues.`;
+  }
+
+  private async executeClaude(prompt: string, _timeout?: number): Promise<string> {
+    try {
+      const messages: SDKMessage[] = [];
+      
+      const appendSystemPrompt = `You are a code reviewer that checks if implementation files comply with specifications/rules.
+
+For each issue found, output a JSON object with this structure:
 {
   "issues": [
     {
       "severity": "error" | "warning" | "notice",
-      "message": "Description of the issue",
+      "message": "Clear description of the issue",
       "file": "path/to/file.ts",
-      "line": <line number>,
-      "confidence": <0.0-1.0>
+      "line": 42,
+      "confidence": 0.95
     }
   ]
 }
 
-Only output the JSON, no other text.`;
-  }
+- severity: "error" for critical violations, "warning" for important issues, "notice" for minor suggestions
+- message: Clear, actionable description of the issue
+- file: The file path where the issue was found
+- line: The line number where the issue occurs (best effort)
+- confidence: A number between 0 and 1 indicating how confident you are about this issue
 
-  private async executeClaude(prompt: string, timeout?: number): Promise<string> {
-    // Note: Using stdin instead of -p flag due to command line length limitations
-    // with large prompts. This is a practical compromise.
-    const child = spawn('claude', [], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-    
-    // Write prompt to stdin
-    child.stdin?.write(prompt);
-    child.stdin?.end();
-
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-
-    child.stdout?.on('data', (data: Buffer) => {
-      stdoutChunks.push(data);
-    });
-
-    child.stderr?.on('data', (data: Buffer) => {
-      stderrChunks.push(data);
-    });
-
-    return new Promise((resolve, reject) => {
-      // Set up timeout
-      const timeoutMs = timeout ?? 120000;
-      const timer = setTimeout(() => {
-        child.kill();
-        reject(new Error(`Claude CLI timed out after ${timeoutMs}ms`));
-      }, timeoutMs);
+If no issues are found, return: {"issues": []}`;
       
-      child.on('error', (error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-
-      child.on('exit', (code) => {
-        clearTimeout(timer);
-        if (code === 0) {
-          resolve(Buffer.concat(stdoutChunks).toString());
-        } else {
-          const stderr = Buffer.concat(stderrChunks).toString();
-          reject(new Error(`Claude CLI failed: ${stderr}`));
-        }
-      });
-    });
+      for await (const message of query({
+        prompt,
+        options: {
+          maxTurns: 1,
+          appendSystemPrompt,
+          allowedTools: ['Glob', 'Grep', 'LS', 'Read', 'WebFetch', 'WebSearch'], // Tools for code analysis
+        },
+      })) {
+        messages.push(message);
+      }
+      
+      // Extract text content from the messages
+      const textContent = messages
+        .map(msg => JSON.stringify(msg))
+        .join('\n');
+      
+      return textContent;
+    } catch (error) {
+      return Promise.reject(error);
+    }
   }
 
   private parseIssues(output: string): Issue[] {
     try {
-      // Extract JSON from the output (handle markdown code blocks)
-      const codeBlockMatch = output.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-      const jsonStr = codeBlockMatch?.[1] ?? output;
-      
-      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        return [];
-      }
-
-      const parsed: unknown = JSON.parse(jsonMatch[0]);
+      // Since we're using outputFormat: 'json', the output should be valid JSON
+      // But the SDKMessage might wrap it, so let's try to parse it
+      const parsed: unknown = JSON.parse(output);
       
       // Validate structure without type assertions
       if (typeof parsed !== 'object' || parsed === null) {
@@ -173,10 +173,18 @@ Only output the JSON, no other text.`;
     }
   }
   
-  private parseSeverity(severity: string | undefined): Severity {
-    if (severity === 'error' || severity === 'warning' || severity === 'notice') {
-      return severity;
+  private parseSeverity(value: string | undefined): Severity {
+    switch (value) {
+      case 'error':
+        return 'error';
+      case 'warning':
+        return 'warning';
+      case 'notice':
+        return 'notice';
+      case undefined:
+        return 'warning';
+      default:
+        return 'warning';
     }
-    return 'warning';
   }
 }

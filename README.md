@@ -80,7 +80,7 @@ This is useful for testing Judge without requiring API keys or CLI tools to be i
 ## Requirements
 
 - Bun v1.2.17 or later
-- For Claude: ANTHROPIC_API_KEY environment variable
+- For Claude: Claude Code must be authenticated (run `claude setup` if needed)
 - For Gemini: Gemini CLI installed (unless using mock provider)
 
 ## Judge vs Linting

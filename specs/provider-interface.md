@@ -21,9 +21,9 @@ All provider implementations must conform to the Provider interface:
    - API/CLI tool failures should provide meaningful error messages
 
 5. **Implementation requirements**:
-   - Claude provider uses @anthropic-ai/sdk (Anthropic SDK)
+   - Claude provider uses @anthropic-ai/claude-code package
    - Gemini provider uses stdin for prompts via CLI
-   - Claude requires ANTHROPIC_API_KEY environment variable
+   - Claude Code SDK uses existing Claude Code authentication
    - Gemini must properly escape/format prompts for shell execution
 
 This ensures all providers work consistently and reliably.

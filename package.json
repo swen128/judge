@@ -35,13 +35,13 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.56.0",
+    "@anthropic-ai/claude-code": "^1.0.48",
     "@types/cross-spawn": "^6.0.6",
     "@types/js-yaml": "^4.0.9",
     "@types/micromatch": "^4.0.6",
     "chalk": "^5.3.0",
     "commander": "^11.1.0",
-    "cross-spawn": "^7.0.3",
+    "cross-spawn": "^7.0.6",
     "js-yaml": "^4.1.0",
     "micromatch": "^4.0.5",
     "neverthrow": "^6.1.0",
