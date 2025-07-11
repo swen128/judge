@@ -75,12 +75,13 @@ The mock provider simulates AI-based checking using pattern matching to detect c
 - `throw` statements
 - Missing required methods
 
-This is useful for testing Judge without requiring Claude or Gemini CLI tools to be installed.
+This is useful for testing Judge without requiring API keys or CLI tools to be installed.
 
 ## Requirements
 
 - Bun v1.2.17 or later
-- Claude CLI or Gemini CLI (unless using mock provider)
+- For Claude: ANTHROPIC_API_KEY environment variable
+- For Gemini: Gemini CLI installed (unless using mock provider)
 
 ## Judge vs Linting
 

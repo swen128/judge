@@ -18,11 +18,12 @@ All provider implementations must conform to the Provider interface:
 
 4. **Error handling**:
    - Network/execution errors should be caught and handled gracefully
-   - CLI tool failures should provide meaningful error messages
+   - API/CLI tool failures should provide meaningful error messages
 
 5. **Implementation requirements**:
-   - Claude provider uses `-p` flag for prompts
-   - Gemini provider uses stdin for prompts
-   - Both must properly escape/format prompts for shell execution
+   - Claude provider uses @anthropic-ai/sdk (Anthropic SDK)
+   - Gemini provider uses stdin for prompts via CLI
+   - Claude requires ANTHROPIC_API_KEY environment variable
+   - Gemini must properly escape/format prompts for shell execution
 
 This ensures all providers work consistently and reliably.

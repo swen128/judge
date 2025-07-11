@@ -23,8 +23,8 @@ Based on additional Q&A session, the following technical decisions have been mad
 - File matching is fast enough to not need preview
 
 ## 4. AI Tool Output Format
-**Decision:** Depends on the AI tool, leverage SDK capabilities
-- Claude Code SDK may handle parsing automatically
+**Decision:** Depends on the AI tool, build flexible parsing layer
+- Claude SDK returns structured message objects with text content
 - Build flexible parsing layer that adapts to tool
 - Don't assume specific format
 - Let provider implementations handle their tool's output
@@ -79,8 +79,8 @@ This simplified design:
 - Don't attempt to continue with missing tools
 
 ## 7. Prompt Size Handling
-**Decision:** Use programmatic interfaces where available
-- Use Claude Code SDK to pass prompts programmatically
+**Decision:** Use appropriate method for each provider
+- For Claude, use SDK with programmatic API calls
 - For Gemini, use stdin to pass prompts (avoids CLI argument limits)
 - No need for size limits or truncation
 

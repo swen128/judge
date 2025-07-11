@@ -184,7 +184,7 @@ interface CheckSummary {
 - **Parallel Execution**: Run rules concurrently with configurable limit
 - **Error Handling**: Fail fast on missing tools, continue on check failures
 - **Tool Integration**: 
-  - Claude: Use SDK for programmatic prompt passing
+  - Claude: Use @anthropic-ai/sdk package for API access
   - Gemini: Pass prompts via stdin to avoid CLI limits
 - **YAML Parsing**: Use js-yaml or similar Node-compatible library
 - **Validation**: Use Zod for runtime config validation
