@@ -82,6 +82,19 @@ This is useful for testing Judge without requiring Claude or Gemini CLI tools to
 - Bun v1.2.17 or later
 - Claude CLI or Gemini CLI (unless using mock provider)
 
+## Judge vs Linting
+
+Judge is designed to check semantic rules that can't be enforced by traditional linting tools:
+
+- **Linting** handles syntax, type safety, and code style rules that can be statically analyzed
+- **Judge** handles semantic rules about behavior, design patterns, and architectural decisions
+
+For example:
+- Lint can enforce "no any types" (syntax rule)
+- Judge can enforce "all providers must handle malformed AI responses gracefully" (semantic rule)
+
+This project uses both ESLint for static analysis and Judge for semantic validation.
+
 ## Development
 
 ```bash

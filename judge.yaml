@@ -8,33 +8,7 @@ fail_on_issues: true
 max_concurrent_checks: 5
 
 rule_bindings:
-  # Type safety rules for all TypeScript files
-  - name: type-safety
-    fail_on: error
-    confidence_threshold: 0.8
-    files:
-      include:
-        - "src/**/*.ts"
-      exclude:
-        - "**/*.test.ts"
-        - "**/*.spec.ts"
-    rules:
-      - path: specs/type-safety.md
-
-  # Error handling patterns
-  - name: error-handling
-    fail_on: error
-    confidence_threshold: 0.8
-    files:
-      include:
-        - "src/**/*.ts"
-      exclude:
-        - "**/*.test.ts"
-        - "**/*.spec.ts"
-    rules:
-      - path: specs/error-handling.md
-
-  # Provider interface compliance
+  # Provider interface compliance - semantic rules that lint can't catch
   - name: provider-compliance
     fail_on: error
     confidence_threshold: 0.9
@@ -46,7 +20,7 @@ rule_bindings:
     rules:
       - path: specs/provider-interface.md
 
-  # CLI standards
+  # CLI standards - user experience patterns
   - name: cli-standards
     fail_on: warning
     confidence_threshold: 0.8
